@@ -1,126 +1,174 @@
 
 // ***** INCLUDES *****
 #include "MAX31855.h"  // Local version
+#include <Streaming.h>
 #include <SoftwareSerial.h>
 #include <serLCD.h>
 
-
 // ***** PIN DEFINITIONS *****
-// const  unsigned  char thermocoupleSO = 6;
-// const  unsigned  char thermocoupleCS = 5;
-// const  unsigned  char thermocoupleCLK = 4;
 const  unsigned  char thermocoupleSO = 41;  // SO
-const  unsigned  char thermocoupleCS = 43;  // CS
-const  unsigned  char thermocoupleCLK = 45; // SCK
+const  unsigned  char thermocoupleCS = 39;  // CS
+const  unsigned  char thermocoupleCLK = 37; // SCK
 
-const  unsigned  char mEN = 46;
-const  unsigned  char mA0 = 47;
-const  unsigned  char mA1 = 48;
-const  unsigned  char mA2 = 49;
+const  unsigned  char mA = 43;
+const  unsigned  char mB = 45;
+const  unsigned  char mC = 47;
+const  unsigned  char mD = 49;
+
+const  unsigned  char ctrlPin = 35;
+const  unsigned  char btn1Pin = 33;
+
+const  unsigned  char lcdpin = 31;
 
 int reg = 0;
-
-const int lcdpin = 35;
+int oldreg = 0;
+const int maxcount = 16;
 
 double tempTC, tempCJC;
 bool faultOpen, faultShortGND, faultShortVCC, x;
 bool temp_unit = 0;  // 0 = Celsius, 1 = Fahrenheit
 
-// MAX31855  MAX31855(thermocoupleSO, thermocoupleCS, thermocoupleCLK);
+unsigned long time;
+unsigned long now;
+const long delaymillis = 500;
+double templimit = 30.0;
 
-// SCK-SCK-5, SS-CS-6, MISO-SO-7
+//Relay parameters
+bool alwayson;
+bool onstatus = false;
+bool checkedAll = false;
+bool goodtemp = true;
+
+// PINS: SCK-SCK-5, SS-CS-6, MISO-SO-7
 MAX31855 temp(thermocoupleCLK, thermocoupleCS, thermocoupleSO);
 serLCD lcd(lcdpin);
 
-double  cold, hot;
-unsigned long time;
-
 void writeNum(int num) {
    if ((num & (1<<0)) > 0) {
-     digitalWrite(mA0, HIGH);
+     digitalWrite(mA, HIGH);
    } else {
-     digitalWrite(mA0, LOW);
+     digitalWrite(mA, LOW);
    }
    if ((num & (1<<1)) > 0) {
-     digitalWrite(mA1, HIGH);
+     digitalWrite(mB, HIGH);
    } else {
-     digitalWrite(mA1, LOW);
+     digitalWrite(mB, LOW);
    }
    if ((num & (1<<2)) > 0) {
-     digitalWrite(mA2, HIGH);
+     digitalWrite(mC, HIGH);
    } else {
-     digitalWrite(mA2, LOW);
+     digitalWrite(mC, LOW);
+   }
+   if ((num & (1<<3)) > 0) {
+     digitalWrite(mD, HIGH);
+   } else {
+     digitalWrite(mD, LOW);
    }
 }
 
+
+
+// Print the temperature on the LCD
+void showTemp(int num, double hot) {
+    char numpad[2];
+    sprintf(numpad, "%02d", num);
+    lcd.clearLine(2);
+    lcd << "T" << numpad << " = " << _FLOAT(hot,2) << " C";
+}
+
+// Print the temperature on the LCD
+void showRelay() {
+    char status[10];
+    if (onstatus) {
+        if (alwayson) {
+           strcpy(status, "always-on");
+        } else {
+           strcpy(status, "on");
+        }
+    } else {
+       strcpy(status, "OFF");
+    }
+    lcd.clearLine(1);
+    lcd << "Relay: " << status;
+}
 
 void  setup()
 {
   Serial.begin(115200);
-//  lcd.setBrightness(25);
-  pinMode(mEN, OUTPUT);
-  pinMode(mA0, OUTPUT);
-  pinMode(mA1, OUTPUT);
-  pinMode(mA2, OUTPUT);
-  digitalWrite(mEN, HIGH);
-  digitalWrite(mA0, LOW);
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
+  lcd.setBrightness(20);
+  pinMode(mA, OUTPUT);
+  pinMode(mB, OUTPUT);
+  pinMode(mC, OUTPUT);
+  pinMode(mD, OUTPUT);
+  digitalWrite(mA, LOW);
+  digitalWrite(mB, LOW);
+  digitalWrite(mC, LOW);
+  digitalWrite(mD, LOW);
 
+  pinMode(btn1Pin, INPUT);
+  alwayson = digitalRead(btn1Pin);
+  if (alwayson == HIGH) {
+    onstatus = true;
+  }
+  showRelay();
+
+  pinMode(ctrlPin, OUTPUT);
+  digitalWrite(ctrlPin, onstatus);
+  
   reg = 0;
+  
+  lcd.clear();
 }
 
 void  loop()
 {
-  
   time = millis();
-//  // Retrieve thermocouple temperature in Degree Celsius
-//  hot = MAX31855.readThermocouple(CELSIUS);  
-//  // Retrieve cold junction temperature in Degree Celsius
-//  cold = MAX31855.readJunction(CELSIUS);
-//  Serial.print(hot);
-//  Serial.print(",");
-//  Serial.print(cold);
-//  Serial.print(",");
-//  Serial.print(time);
-//  Serial.print(",");
-//  Serial.print(reg);
-//  Serial.println();
-    x = temp.readMAX31855(&tempTC, &tempCJC, &faultOpen, &faultShortGND, &faultShortVCC, temp_unit);
-//    Serial.print(tempTC);
-//    Serial.print("\t");
-//    Serial.print(tempCJC);
-//    Serial.print("\t");
-//    Serial.print(faultOpen);
-//    Serial.print(faultShortGND);
-//    Serial.println(faultShortVCC); 
-    tempTC = 111;
+  // Read the temperature
+  x = temp.readMAX31855(&tempTC, &tempCJC, &faultOpen, &faultShortGND, &faultShortVCC, temp_unit);
 
-    Serial.print(tempTC);
-    Serial.print(",");
-    Serial.print(tempCJC);
-    Serial.print(",");
-    Serial.print(time);
-    Serial.print(",");
-    Serial.print(reg);
-    Serial.print(",");
-    Serial.print(faultOpen);
-    Serial.print(faultShortGND);
-    Serial.println(faultShortVCC);
-
-  lcd.clear();
-  lcd.selectLine(1);
-  lcd.print("Hot :");
-  lcd.print(tempTC);
-  lcd.print(" C");
-  lcd.selectLine(2);
-  lcd.print("Cold: ");
-  lcd.print(tempCJC);
-  lcd.print(" C");
+  // Set the next channel number
   reg++;
-  if (reg >= 2) {
+  if (reg >= maxcount) {
     reg = 0;
+    checkedAll = true;  // have we seen every channel at least once?
   }
-  writeNum(reg);
-  delay(75);
+  writeNum(reg);  // set new connection
+  now = millis();  // set reference point for delay
+  
+  ///// do other stuff
+  // send data
+  Serial << oldreg << "," << tempTC << "," << tempCJC << "," << time << "," << faultOpen << faultShortGND << faultShortVCC << endl;
+  showTemp(oldreg, tempTC);
+  oldreg = reg;
+  if (tempTC > templimit) {
+       goodtemp = false; 
+  }
+  
+  if ((checkedAll && goodtemp) || (alwayson)) {
+       onstatus = true;
+  } else {
+       onstatus = false; 
+  }
+  
+  bool btn1 = digitalRead(btn1Pin);
+  if (btn1 != alwayson) {
+     alwayson = btn1;
+     if (alwayson) {
+        onstatus = alwayson;
+     } else {
+        // start checking them all again
+        onstatus = false;
+        checkedAll = false;
+        goodtemp = true;
+        reg = 0;
+     }
+  }
+  showRelay();
+  digitalWrite(ctrlPin, onstatus);
+
+  // wait until enought time elapsed    
+  while ((millis() - now) < delaymillis) {
+      // just wait....
+  }
+
 }

@@ -7,6 +7,17 @@
 
 #include "MAX31855.h"
 
+#define INVERSE
+
+
+#ifdef INVERSE
+#define OUTHIGH LOW
+#define OUTLOW HIGH
+#else
+#define OUTHIGH HIGH
+#define OUTLOW LOW
+#endif
+
 MAX31855::MAX31855(int SCK_pin, int CS_pin, int SO_pin) {
         _sck_pin = SCK_pin;
         _cs_pin = CS_pin;
@@ -58,60 +69,60 @@ long MAX31855::spiread32(void) {
         digitalWrite(_cs_pin, LOW);
 
         for (i=31; i>=0; i--) {
-                digitalWrite(_sck_pin, LOW);
+                digitalWrite(_sck_pin, OUTLOW);
                 if (digitalRead(_so_pin))
                         d |= (1 << i);
-                digitalWrite(_sck_pin, HIGH);
+                digitalWrite(_sck_pin, OUTHIGH);
         }
 
-        digitalWrite(_cs_pin, HIGH);
+        digitalWrite(_cs_pin, OUTHIGH);
         return d;
 }
 
 void MAX31855::spiread32(int *tc, int *cjc) {
         int i;
         *tc = *cjc =  0;
-        digitalWrite(_cs_pin, LOW);
+        digitalWrite(_cs_pin, OUTLOW);
 
         for (i=15; i>=0; i--) {
-                digitalWrite(_sck_pin, LOW);
+                digitalWrite(_sck_pin, OUTLOW);
 
                 if (digitalRead(_so_pin)) {
                         *tc |= (1 << i);
                 }
 
-                digitalWrite(_sck_pin, HIGH);
+                digitalWrite(_sck_pin, OUTHIGH);
         }
 
         for (i=15; i>=0; i--) {
-                digitalWrite(_sck_pin, LOW);
+                digitalWrite(_sck_pin, OUTLOW);
 
                 if (digitalRead(_so_pin)) {
                         *cjc |= (1 << i);
                 }
 
-                digitalWrite(_sck_pin, HIGH);
+                digitalWrite(_sck_pin, OUTHIGH);
         }
 
-        digitalWrite(_cs_pin, HIGH);
+        digitalWrite(_cs_pin, OUTHIGH);
 }
 
 int MAX31855::spiread16(void) {
         int i;
         int d = 0;
-        digitalWrite(_cs_pin, LOW);
+        digitalWrite(_cs_pin, OUTLOW);
 
         for (i=15; i>=0; i--) {
-                digitalWrite(_sck_pin, LOW);
+                digitalWrite(_sck_pin, OUTLOW);
 
                 if (digitalRead(_so_pin)) {
                         d |= (1 << i);
                 }
 
-                digitalWrite(_sck_pin, HIGH);
+                digitalWrite(_sck_pin, OUTHIGH);
         }
 
-        digitalWrite(_cs_pin, HIGH);
+        digitalWrite(_cs_pin, OUTHIGH);
 
         return d;
 }
