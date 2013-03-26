@@ -6,6 +6,7 @@
 #include <serLCD.h>
 
 // ***** PIN DEFINITIONS *****
+// Current settings for Arduino Mega ADK
 const  unsigned  char thermocoupleSO = 41;  // SO
 const  unsigned  char thermocoupleCS = 39;  // CS
 const  unsigned  char thermocoupleCLK = 37; // SCK
@@ -19,10 +20,14 @@ const  unsigned  char ctrlPin = 35;
 const  unsigned  char btn1Pin = 33;
 
 const  unsigned  char lcdpin = 31;
+// ***** PIN DEFINITION END
+
+// ***** Max number of channels *****
+// Counts 0..maxcount-1
+const int maxcount = 16;
 
 int reg = 0;
 int oldreg = 0;
-const int maxcount = 16;
 
 double tempTC, tempCJC;
 bool faultOpen, faultShortGND, faultShortVCC, x;
