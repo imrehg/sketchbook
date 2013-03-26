@@ -24,7 +24,7 @@ const  unsigned  char lcdpin = 31;
 
 // ***** Max number of channels *****
 // Counts 0..maxcount-1
-const int maxcount = 16;
+const int maxcount = 5;
 
 int reg = 0;
 int oldreg = 0;
