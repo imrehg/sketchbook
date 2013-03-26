@@ -146,7 +146,8 @@ void  loop()
   
   ///// do other stuff
   // send data
-  Serial << oldreg << "," << tempTC << "," << tempCJC << "," << time << "," << faultOpen << faultShortGND << faultShortVCC << endl;
+  // Append "T" in the front to signify thermocouple, thus we can distinquish it from other Arduinos. Ie. acts like an ID.
+  Serial << "T," << oldreg << "," << tempTC << "," << tempCJC << "," << time << "," << faultOpen << faultShortGND << faultShortVCC << endl;
   showTemp(oldreg, tempTC);
   oldreg = reg;
   if (tempTC > templimit) {
